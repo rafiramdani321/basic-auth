@@ -8,7 +8,7 @@ const Navbar = () => {
       <div className="flex w-full items-center justify-between px-56">
         <NavLink />
         <Link
-          href={"/login"}
+          href={"/signin"}
           className="text-emerald-600 font-semibold text-base border bg-background px-2.5 py-1 rounded-md hover:ring-2 hover:ring-emerald-400"
         >
           Login

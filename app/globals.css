@@ -7,7 +7,12 @@
   --foreground: #171717;
 }
 
+html {
+  @apply text-foreground bg-background;
+}
+
 body {
+  @apply text-foreground bg-background;
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
