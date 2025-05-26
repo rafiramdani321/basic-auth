@@ -47,7 +47,7 @@ const Login = () => {
           </h2>
         </div>
         <form className="p-10" onSubmit={onSubmit}>
-          <div>
+          <div className="mb-5">
             <label className="block text-base text-neutral-700 font-semibold">
               Email
             </label>
@@ -60,7 +60,7 @@ const Login = () => {
               required
             />
           </div>
-          <div>
+          <div className="mb-2">
             <label className="block text-base text-neutral-700 font-semibold">
               Password
             </label>
@@ -80,8 +80,8 @@ const Login = () => {
             </Link>
           </p>
           <div className="text-center mt-10">
-            <button className="text-white font-semibold rounded-md bg-emerald-600 px-3 py-1 hover:shadow-md hover:shadow-emerald-500">
-              Login
+            <button className="uppercase text-white font-semibold rounded-md bg-emerald-600 px-3 py-1 hover:shadow-md hover:shadow-emerald-500">
+              Sign in
             </button>
           </div>
         </form>
