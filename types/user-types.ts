@@ -1,4 +1,4 @@
-export type registrationParams = {
+export type createUserParams = {
   username: string;
   email: string;
   password: string;

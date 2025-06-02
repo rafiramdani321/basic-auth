@@ -3,8 +3,14 @@
 import React from "react";
 import Link from "next/link";
 import clsx from "clsx";
+import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 
 import { showToastError, showToastSuccess } from "@/lib/toast";
+import {
+  registrationValidation,
+  validationResponses,
+} from "@/lib/validationSchema";
+import { buildErrorMap } from "@/lib/errorMap";
 
 const Registration = () => {
   const [formData, setFormData] = React.useState({
@@ -13,8 +19,15 @@ const Registration = () => {
     password: "",
     confirmPassword: "",
   });
-  const [errors, setErrors] = React.useState<Partial<typeof formData>>({});
-  const [autoFocus, setAutoFocus] = React.useState(false);
+
+  const [visiblePassword, setVisiblePassword] = React.useState(false);
+  const [visibleConfirmPassword, setVisibleConfirmPassword] =
+    React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [autoFocues, setAutoFocus] = React.useState(false);
+  const [errors, setErrors] = React.useState<
+    Partial<Record<keyof typeof formData, string[]>>
+  >({});
 
   const inputRef = React.useRef<{
     username: HTMLInputElement | null;
@@ -29,8 +42,7 @@ const Registration = () => {
   });
 
   React.useEffect(() => {
-    if (!autoFocus) return;
-
+    if (!autoFocues) return;
     if (errors.username && inputRef.current.username) {
       inputRef.current.username.focus();
     } else if (errors.email && inputRef.current.email) {
@@ -40,9 +52,8 @@ const Registration = () => {
     } else if (errors.confirmPassword && inputRef.current.confirmPassword) {
       inputRef.current.confirmPassword.focus();
     }
-
     setAutoFocus(false);
-  }, [errors, autoFocus]);
+  }, [errors, autoFocues]);
 
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -54,40 +65,56 @@ const Registration = () => {
 
     setErrors((prev) => ({
       ...prev,
-      [name]: "",
+      [name]: [],
     }));
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const IconPassword = visiblePassword ? EyeOff : Eye;
+  const IconConfirmPassword = visibleConfirmPassword ? EyeOff : Eye;
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setLoading(true);
 
-    const newErrors: Partial<typeof formData> = {};
-
-    if (formData.username.trim() === "")
-      newErrors.username = "Username required!";
-    if (formData.email.trim() === "") newErrors.email = "Email required!";
-    if (formData.password.trim() === "")
-      newErrors.password = "Password required!";
-    if (formData.confirmPassword.trim() === "")
-      newErrors.confirmPassword = "Confirm password required!";
-    if (formData.password !== formData.confirmPassword)
-      newErrors.confirmPassword = "Confirm password do not match!";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    const errorsValidationFront = registrationValidation.safeParse(formData);
+    if (!errorsValidationFront.success) {
+      const errorsFront = validationResponses(errorsValidationFront);
+      setErrors(buildErrorMap<keyof typeof formData>(errorsFront));
       setAutoFocus(true);
-      showToastError("Please fix the form errors");
+      setLoading(false);
       return;
     }
 
-    setFormData({
-      username: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    });
-    showToastSuccess("registraion success");
+    try {
+      const response = await fetch("/api/auth/registration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        if (data.details && Array.isArray(data.details)) {
+          setErrors(buildErrorMap<keyof typeof formData>(data.details));
+        }
+        showToastError(data.error || "Something went wrong");
+        return;
+      }
+
+      setFormData({
+        username: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+      setErrors({});
+      showToastSuccess(data.message);
+    } catch (error) {
+      showToastError("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -100,7 +127,10 @@ const Registration = () => {
         </div>
         <form className="p-10" onSubmit={onSubmit}>
           <div className="mb-5">
-            <label className="block text-base text-neutral-700 font-semibold">
+            <label
+              htmlFor="username"
+              className="block text-base text-neutral-700 font-semibold"
+            >
               Username
             </label>
             <input
@@ -109,9 +139,11 @@ const Registration = () => {
               }}
               type="text"
               name="username"
+              id="username"
+              aria-invalid={!!errors.username?.length}
               className={clsx(
                 "w-full h-9 rounded-md px-2",
-                errors.username
+                errors.username?.length
                   ? "border border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
                   : "border-2 border-gray-300 focus:outline-none"
               )}
@@ -119,14 +151,17 @@ const Registration = () => {
               onChange={handleOnChange}
               autoFocus
             />
-            {errors.username && (
-              <p className="text-red-500 text-xs ml-1 font-semibold">
-                {errors.username}
+            {errors.username?.map((msg, i) => (
+              <p key={i} className="text-red-500 text-xs ml-1 font-semibold">
+                {`- ${msg}`}
               </p>
-            )}
+            ))}
           </div>
           <div className="mb-5">
-            <label className="block text-base text-neutral-700 font-semibold">
+            <label
+              htmlFor="email"
+              className="block text-base text-neutral-700 font-semibold"
+            >
               Email
             </label>
             <input
@@ -135,71 +170,101 @@ const Registration = () => {
               }}
               type="email"
               name="email"
+              id="email"
+              aria-invalid={!!errors.email?.length}
               className={clsx(
                 "w-full h-9 rounded-md px-2",
-                errors.email
+                errors.email?.length
                   ? "border border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
                   : "border-2 border-gray-300 focus:outline-none"
               )}
               value={formData.email}
               onChange={handleOnChange}
             />
-            {errors.email && (
-              <p className="text-red-500 text-xs ml-1 font-semibold">
-                {errors.email}
+            {errors.email?.map((msg, i) => (
+              <p key={i} className="text-red-500 text-xs ml-1 font-semibold">
+                {`- ${msg}`}
               </p>
-            )}
+            ))}
           </div>
-          <div className="flex gap-x-5 mb-2">
-            <div>
-              <label className="block text-base text-neutral-700 font-semibold">
+          <div className="flex gap-x-3 mb-2">
+            <div className="w-full">
+              <label
+                htmlFor="password"
+                className="block text-base text-neutral-700 font-semibold"
+              >
                 Password
               </label>
-              <input
-                ref={(e) => {
-                  inputRef.current.password = e;
-                }}
-                type="password"
-                name="password"
-                className={clsx(
-                  "w-full h-9 rounded-md px-2",
-                  errors.password
-                    ? "border border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
-                    : "border-2 border-gray-300 focus:outline-none"
-                )}
-                value={formData.password}
-                onChange={handleOnChange}
-              />
-              {errors.password && (
-                <p className="text-red-500 text-xs ml-1 font-semibold">
-                  {errors.password}
+              <div className="relative">
+                <input
+                  ref={(e) => {
+                    inputRef.current.password = e;
+                  }}
+                  type={visiblePassword ? "text" : "password"}
+                  name="password"
+                  id="password"
+                  aria-invalid={!!errors.password?.length}
+                  className={clsx(
+                    "w-full h-9 rounded-md pl-2 pr-10",
+                    errors.password?.length
+                      ? "border border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
+                      : "border-2 border-gray-300 focus:outline-none"
+                  )}
+                  value={formData.password}
+                  onChange={handleOnChange}
+                />
+                <div className="absolute right-0 top-2.5 mr-3">
+                  <IconPassword
+                    onClick={() => setVisiblePassword(!visiblePassword)}
+                    className="h-4 w-4 cursor-pointer"
+                  />
+                </div>
+              </div>
+              {errors.password?.map((msg, i) => (
+                <p key={i} className="text-red-500 text-xs ml-1 font-semibold">
+                  {`- ${msg}`}
                 </p>
-              )}
+              ))}
             </div>
-            <div>
-              <label className="block text-base text-neutral-700 font-semibold">
+            <div className="w-full">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-base text-neutral-700 font-semibold"
+              >
                 Confirm Password
               </label>
-              <input
-                ref={(e) => {
-                  inputRef.current.confirmPassword = e;
-                }}
-                type="password"
-                name="confirmPassword"
-                className={clsx(
-                  "w-full h-9 rounded-md px-2",
-                  errors.confirmPassword
-                    ? "border border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
-                    : "border-2 border-gray-300 focus:outline-none"
-                )}
-                value={formData.confirmPassword}
-                onChange={handleOnChange}
-              />
-              {errors.confirmPassword && (
-                <p className="text-red-500 text-xs ml-1 font-semibold">
-                  {errors.confirmPassword}
+              <div className="relative">
+                <input
+                  ref={(e) => {
+                    inputRef.current.confirmPassword = e;
+                  }}
+                  type={visibleConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  id="confirmPassword"
+                  aria-invalid={!!errors.confirmPassword?.length}
+                  className={clsx(
+                    "w-full h-9 rounded-md pl-2 pr-10",
+                    errors.confirmPassword?.length
+                      ? "border border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
+                      : "border-2 border-gray-300 focus:outline-none"
+                  )}
+                  value={formData.confirmPassword}
+                  onChange={handleOnChange}
+                />
+                <div className="absolute right-0 top-2.5 mr-3">
+                  <IconConfirmPassword
+                    onClick={() =>
+                      setVisibleConfirmPassword(!visibleConfirmPassword)
+                    }
+                    className="h-4 w-4 cursor-pointer"
+                  />
+                </div>
+              </div>
+              {errors.confirmPassword?.map((msg, i) => (
+                <p key={i} className="text-red-500 text-xs ml-1 font-semibold">
+                  {`- ${msg}`}
                 </p>
-              )}
+              ))}
             </div>
           </div>
           <p className="text-xs">
@@ -208,8 +273,19 @@ const Registration = () => {
               signin
             </Link>
           </p>
-          <div className="text-center mt-10">
-            <button className="uppercase text-white font-semibold rounded-md bg-emerald-600 px-3 py-1 hover:shadow-md hover:shadow-emerald-500">
+          <div className="flex justify-center mt-10">
+            <button
+              disabled={loading}
+              className={clsx(
+                "uppercase text-xl flex gap-x-2 items-center text-white font-semibold rounded-md px-5 py-1",
+                loading
+                  ? "bg-emerald-600/40"
+                  : "bg-emerald-600 hover:shadow-md hover:shadow-emerald-500"
+              )}
+            >
+              {loading ? (
+                <LoaderCircle className="font-semibold animate-spin" />
+              ) : null}
               Signup
             </button>
           </div>
