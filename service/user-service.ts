@@ -1,13 +1,13 @@
-import bcrypt from "bcrypt";
-
-import { createUserParams } from "@/types/user-types";
+import { createUserParams, loginParams } from "@/types/user-types";
 import { AppError } from "@/lib/errors";
+import bcrypt from "bcrypt";
 import {
   createUser,
   findUserByEmail,
   findUserByUsername,
 } from "@/repositories/user-repository";
 import {
+  loginValidation,
   registrationValidation,
   validationResponses,
 } from "@/lib/validationSchema";
@@ -43,4 +43,27 @@ export const registrationService = async (data: createUserParams) => {
   });
 
   return newUserData;
+};
+
+export const loginService = async (data: loginParams) => {
+  const errorValidation = loginValidation.safeParse(data);
+  if (!errorValidation.success) {
+    const errors = validationResponses(errorValidation);
+    throw new AppError("Validation failed", 400, errors);
+  }
+
+  const user = await findUserByEmail(data.email);
+  const isValidPassword = user
+    ? await bcrypt.compare(data.password, user.password)
+    : false;
+
+  if (!user || !isValidPassword) {
+    throw new AppError("Email / Password incorrect", 400);
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+  };
 };
