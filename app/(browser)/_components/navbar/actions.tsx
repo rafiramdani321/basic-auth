@@ -1,18 +1,44 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+
 import { userDecodeToken } from "@/types/user-types";
+import { showToastError } from "@/lib/toast";
 
 interface userProps {
   user: userDecodeToken | null;
 }
 
 const Actions = ({ user }: userProps) => {
+  const router = useRouter();
+  const [loading, setLoading] = React.useState(false);
+
+  const handleLogout = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { "Content-type": "application/json" },
+      });
+      if (res.ok) {
+        router.refresh();
+      }
+    } catch (error: any) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <>
       {user ? (
-        <button className="text-emerald-600 font-semibold text-base border bg-background px-2.5 py-1 rounded-md hover:ring-2 hover:ring-emerald-400">
+        <button
+          disabled={loading}
+          onClick={handleLogout}
+          className="text-emerald-600 font-semibold text-base border bg-background px-2.5 py-1 rounded-md hover:ring-2 hover:ring-emerald-400"
+        >
           Logout
         </button>
       ) : (

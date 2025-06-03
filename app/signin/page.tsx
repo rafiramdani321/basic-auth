@@ -89,7 +89,7 @@ const Login = () => {
         email: "",
         password: "",
       });
-      showToastSuccess(data.messages);
+      showToastSuccess(data.message || "Login Success");
       router.push("/");
       router.refresh();
     } catch (error) {

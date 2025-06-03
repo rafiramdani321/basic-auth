@@ -1,7 +1,7 @@
 import { userDecodeToken } from "@/types/user-types";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
-const JWT_TOKEN = process.env.JWT_TOKEN || "token_secret";
+const JWT_TOKEN = process.env.JWT_TOKEN! || "token_secret";
 
 export const signToken = (payload: object, expiresIn: string = "1h") => {
   return jwt.sign(payload, JWT_TOKEN as jwt.Secret, {
