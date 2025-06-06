@@ -5,14 +5,18 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Eye, EyeOff, LoaderCircle } from "lucide-react";
+import ReCAPTCHA from "react-google-recaptcha";
 
 import { showToastError, showToastSuccess } from "@/lib/toast";
 import { loginValidation, validationResponses } from "@/lib/validationSchema";
 import { buildErrorMap } from "@/lib/errorMap";
-import { revalidatePath } from "next/cache";
+
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
 
 const Login = () => {
   const router = useRouter();
+  const recaptchaRef = React.useRef<ReCAPTCHA>(null);
+
   const [formData, setFormData] = React.useState({
     email: "",
     password: "",
@@ -20,6 +24,8 @@ const Login = () => {
   const [visiblePassword, setVisiblePassword] = React.useState(false);
   const [autoFocus, setAutoFocus] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [showCaptcha, setShowCaptcha] = React.useState(false);
+  const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
   const [errors, setErrors] = React.useState<
     Partial<Record<keyof typeof formData, string[]>>
   >({});
@@ -66,18 +72,38 @@ const Login = () => {
       const errorsFront = validationResponses(errorValidationFront);
       setErrors(buildErrorMap<keyof typeof formData>(errorsFront));
       setAutoFocus(true);
+      setLoading(false);
       return;
+    }
+
+    const bodyData: any = { ...formData };
+    if (showCaptcha) {
+      if (!captchaToken) {
+        showToastError("Please complete CAPTCHA");
+        setLoading(false);
+        return;
+      }
+      bodyData.captchaResponse = captchaToken;
     }
 
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(bodyData),
       });
 
       const data = await response.json();
       if (!response.ok) {
+        if (
+          data.error?.toLowerCase().includes("captcha") ||
+          data.error?.toLowerCase().includes("complete captcha")
+        ) {
+          setShowCaptcha(true);
+          if (recaptchaRef.current) recaptchaRef.current.reset();
+          setCaptchaToken(null);
+        }
+
         if (data.details && Array.isArray(data.details)) {
           setErrors(buildErrorMap<keyof typeof formData>(data.details));
         }
@@ -89,6 +115,11 @@ const Login = () => {
         email: "",
         password: "",
       });
+      setErrors({});
+      setShowCaptcha(false);
+      if (recaptchaRef.current) recaptchaRef.current.reset();
+      setCaptchaToken(null);
+
       showToastSuccess(data.message || "Login Success");
       router.push("/");
       router.refresh();
@@ -175,6 +206,17 @@ const Login = () => {
               </p>
             ))}
           </div>
+
+          {showCaptcha && (
+            <div className="mb-4">
+              <ReCAPTCHA
+                sitekey={RECAPTCHA_SITE_KEY}
+                onChange={(token) => setCaptchaToken(token)}
+                ref={recaptchaRef}
+              />
+            </div>
+          )}
+
           <p className="text-xs">
             you don't have an account yet?{" "}
             <Link href={"/signup"} className="text-emerald-600 hover:underline">

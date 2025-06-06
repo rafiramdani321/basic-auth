@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/utils/prisma";
 import { createUserParams } from "@/types/user-types";
 
 export const createUser = async (data: createUserParams) => {

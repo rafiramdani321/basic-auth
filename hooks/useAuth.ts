@@ -1,4 +1,4 @@
-import { verifyToken } from "@/lib/jwt";
+import { verifyToken } from "@/utils/jwt";
 import { userDecodeToken } from "@/types/user-types";
 import { cookies } from "next/headers";
 
