@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\mraffi\\OneDrive\\Desktop\\portfolio\\basic-auth-nextjs\\logs\\.ee5cdb35dcb443948998f0e826f7566b8ae99c05-audit.json",
+    "files": [
+        {
+            "date": 1749267386002,
+            "name": "C:\\Users\\mraffi\\OneDrive\\Desktop\\portfolio\\basic-auth-nextjs\\logs\\logour-2025-06-07.log",
+            "hash": "79f1a7c9bebbe1f36ce4f4680cd39cca7418b96bcd564833dab53eebaeffa013"
+        }
+    ],
+    "hashType": "sha256"
+}

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 import { userDecodeToken } from "@/types/user-types";
-import { showToastError } from "@/lib/toast";
 
 interface userProps {
   user: userDecodeToken | null;
@@ -21,6 +20,7 @@ const Actions = ({ user }: userProps) => {
       const res = await fetch("/api/auth/logout", {
         method: "POST",
         headers: { "Content-type": "application/json" },
+        body: JSON.stringify({ email: user?.email }),
       });
       if (res.ok) {
         router.refresh();
