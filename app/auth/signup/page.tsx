@@ -269,7 +269,10 @@ const Registration = () => {
           </div>
           <p className="text-xs">
             you have an account yet?{" "}
-            <Link href={"/signin"} className="text-emerald-600 hover:underline">
+            <Link
+              href={"/auth/signin"}
+              className="text-emerald-600 hover:underline"
+            >
               signin
             </Link>
           </p>

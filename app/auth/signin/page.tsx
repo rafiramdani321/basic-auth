@@ -219,7 +219,10 @@ const Login = () => {
 
           <p className="text-xs">
             you don't have an account yet?{" "}
-            <Link href={"/signup"} className="text-emerald-600 hover:underline">
+            <Link
+              href={"/auth/signup"}
+              className="text-emerald-600 hover:underline"
+            >
               signup
             </Link>
           </p>

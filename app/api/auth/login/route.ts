@@ -1,4 +1,4 @@
-import { NextRequest, userAgent } from "next/server";
+import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { captchaLimiter, rateLimiter } from "@/utils/rate-limitter";
 
