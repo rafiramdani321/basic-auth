@@ -1,4 +1,4 @@
-import React from "react";
+import React, { use } from "react";
 import NavLink from "./navlink";
 
 import Actions from "./actions";
@@ -12,7 +12,7 @@ const Navbar = ({ user }: userProps) => {
   return (
     <nav className="bg-emerald-600 h-16 flex w-full">
       <div className="flex w-full items-center justify-between px-56">
-        <NavLink />
+        <NavLink user={user} />
         <Actions user={user} />
       </div>
     </nav>

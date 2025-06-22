@@ -3,6 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import clsx from "clsx";
+import { userDecodeToken } from "@/types/user-types";
+
+interface userProps {
+  user: userDecodeToken | null;
+}
 
 const data = [
   {
@@ -22,7 +28,7 @@ const data = [
   },
 ];
 
-const NavLink = () => {
+const NavLink = ({ user }: userProps) => {
   const pathname = usePathname();
   return (
     <div className="flex gap-x-8 text-white font-semibold text-base uppercase">
@@ -35,6 +41,17 @@ const NavLink = () => {
           {item.name}
         </Link>
       ))}
+      {user ? (
+        <Link
+          href={"/profile"}
+          className={clsx(
+            "hover:underline",
+            pathname === "/profile" && "underline"
+          )}
+        >
+          Profile
+        </Link>
+      ) : null}
     </div>
   );
 };
