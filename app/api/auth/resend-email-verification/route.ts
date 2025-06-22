@@ -1,5 +1,6 @@
 import { sendMail } from "@/lib/email";
 import { AppError } from "@/lib/errors";
+import { resendEmailLogger } from "@/lib/logger/resend-email-logger";
 import { errorResponse, successResponse } from "@/lib/responses";
 import {
   createToken,
@@ -7,12 +8,13 @@ import {
 } from "@/repositories/token-repository";
 import { findUserByEmail } from "@/repositories/user-repository";
 import { emailVerificationToken } from "@/utils/jwt";
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const ip = req.ip || req.headers.get("x-forwarded-for") || "unknown";
+  const userAgent = req.headers.get("user-agent") || "unknown";
+  const email = await req.json();
   try {
-    const email = await req.json();
-
     const user = await findUserByEmail(email);
     if (!user) {
       throw new AppError("Email not found.", 400);
@@ -34,12 +36,28 @@ export async function POST(req: Request) {
     const message = `<p>Click the link below to verify your email</p><a href="${url}">${url}</a>`;
     await sendMail(user.email, `Verification account : `, message);
 
+    resendEmailLogger.info({
+      event: "resend_email_success",
+      email: user.email,
+      ip,
+      userAgent,
+      timestamp: new Date().toISOString(),
+    });
+
     return successResponse(
       "Resend verification successfully, Please check your email.",
       200
     );
   } catch (error) {
     if (error instanceof AppError) {
+      resendEmailLogger.error({
+        event: "resend_email_failed",
+        email: email,
+        ip,
+        userAgent,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
       return errorResponse(error.message, error.statusCode, error.details);
     }
     return errorResponse("Internal server error", 500);

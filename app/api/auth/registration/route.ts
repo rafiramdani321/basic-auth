@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
         ip,
         userAgent,
         error: error.message,
-        timesstamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       });
       return errorResponse(error.message, error.statusCode, error.details);
     }
