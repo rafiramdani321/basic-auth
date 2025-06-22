@@ -20,7 +20,11 @@ export async function POST(req: NextRequest) {
       timesstamp: new Date().toISOString(),
     });
 
-    return successResponse("Registration successfully", 201, null);
+    return successResponse(
+      "Registration successfully, Please check your email for activation.",
+      201,
+      null
+    );
   } catch (error: any) {
     if (error instanceof AppError) {
       registrationLogger.info({

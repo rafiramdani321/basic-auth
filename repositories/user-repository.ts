@@ -7,8 +7,13 @@ export const createUser = async (data: createUserParams) => {
       username: data.username,
       email: data.email,
       password: data.password,
+      isVerified: false,
     },
   });
+};
+
+export const findUserById = async (userId: string) => {
+  return prisma.user.findUnique({ where: { id: userId } });
 };
 
 export const findUserByUsername = async (username: string) => {
@@ -17,4 +22,11 @@ export const findUserByUsername = async (username: string) => {
 
 export const findUserByEmail = async (email: string) => {
   return prisma.user.findUnique({ where: { email } });
+};
+
+export const updateIsVerifiedByUserId = async (userId: string) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { isVerified: true },
+  });
 };

@@ -10,14 +10,12 @@ export const registrationValidation = z
       .string()
       .nonempty("Email is required.")
       .email("Invalid email address."),
-    password: z
-      .string()
-      .nonempty("Password is required.")
-      .min(8, "Password must be at least 8 characters.")
-      .regex(/[a-z]/, "Password Must include at least one lowercase letter.")
-      .regex(/[A-Z]/, "Password Must include at least one uppercase letter.")
-      .regex(/\d/, "Password Must include at least one number.")
-      .regex(/[\W_]/, "Password Must include at least one special character."),
+    password: z.string().nonempty("Password is required."),
+    // .min(8, "Password must be at least 8 characters.")
+    // .regex(/[a-z]/, "Password Must include at least one lowercase letter.")
+    // .regex(/[A-Z]/, "Password Must include at least one uppercase letter.")
+    // .regex(/\d/, "Password Must include at least one number.")
+    // .regex(/[\W_]/, "Password Must include at least one special character."),
     confirmPassword: z.string().nonempty("Confirm password is required."),
   })
   .refine((data) => data.password === data.confirmPassword, {

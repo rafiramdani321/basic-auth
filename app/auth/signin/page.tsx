@@ -4,16 +4,19 @@ import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { Eye, EyeOff, LoaderCircle } from "lucide-react";
+import { Eye, EyeOff, LoaderCircle, X } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha";
 
 import { showToastError, showToastSuccess } from "@/lib/toast";
 import { loginValidation, validationResponses } from "@/lib/validationSchema";
 import { buildErrorMap } from "@/lib/errorMap";
+import { toast } from "sonner";
+import { useResendEmail } from "@/hooks/useResendEmail";
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
 
 const Login = () => {
+  const { resendEmailVerification } = useResendEmail();
   const router = useRouter();
   const recaptchaRef = React.useRef<ReCAPTCHA>(null);
 
@@ -61,6 +64,15 @@ const Login = () => {
     }));
   };
 
+  const handleResendEmail = async () => {
+    toast.dismiss();
+    if (!formData.email) {
+      return showToastError("Something went wrong");
+    }
+
+    await resendEmailVerification(formData.email);
+  };
+
   const IconPassword = visiblePassword ? EyeOff : Eye;
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -95,6 +107,34 @@ const Login = () => {
 
       const data = await response.json();
       if (!response.ok) {
+        if (data?.details[0]?.field === "request_new_verification") {
+          showToastError(
+            <div className="flex gap-x-4">
+              <span>
+                {data.error}.{" "}
+                <button
+                  className="text-emerald-500 underline font-semibold"
+                  onClick={() => handleResendEmail()}
+                >
+                  Resend verification
+                </button>
+              </span>
+              <div>
+                <X
+                  onClick={() => toast.dismiss()}
+                  className="h-5 w-5 cursor-pointer"
+                />
+              </div>
+            </div>,
+            "top-center",
+            Infinity
+          );
+          setFormData((prev) => ({
+            ...prev,
+            password: "",
+          }));
+          return;
+        }
         if (
           data.error?.toLowerCase().includes("captcha") ||
           data.error?.toLowerCase().includes("complete captcha")

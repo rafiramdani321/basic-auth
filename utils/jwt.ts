@@ -35,3 +35,20 @@ export const verifyToken = (token: string): userDecodeToken | null => {
     return null;
   }
 };
+
+export const emailVerificationToken = (email: string, expiresIn = "1h") => {
+  return jwt.sign(
+    { email },
+    process.env.EMAIL_VERIFICATION_SECRET as jwt.Secret,
+    {
+      expiresIn: expiresIn as jwt.SignOptions["expiresIn"],
+    }
+  );
+};
+
+export const verifyEmailToken = (token: string) => {
+  return jwt.verify(
+    token,
+    process.env.EMAIL_VERIFICATION_SECRET!
+  ) as JwtPayload;
+};

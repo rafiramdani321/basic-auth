@@ -11,6 +11,11 @@ import {
   registrationValidation,
   validationResponses,
 } from "@/lib/validationSchema";
+import { createToken } from "@/repositories/token-repository";
+import { sendMail } from "@/lib/email";
+import { emailVerificationToken } from "@/utils/jwt";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL!;
 
 export const registrationService = async (data: createUserParams) => {
   const errorsValidation = registrationValidation.safeParse(data);
@@ -42,6 +47,19 @@ export const registrationService = async (data: createUserParams) => {
     password: hashPassword,
   });
 
+  const token = emailVerificationToken(newUserData.email);
+  const one_hour = 60 * 60 * 1000;
+  const newTokenData = {
+    userId: newUserData.id,
+    token,
+    verifyExp: new Date(Date.now() + one_hour),
+  };
+  await createToken(newTokenData);
+
+  const url = `${BASE_URL}/auth/verify-account/${token}`;
+  const message = `<p>Click the link below to verify your email</p><a href="${url}">${url}</a>`;
+  await sendMail(newUserData.email, `Verification account : `, message);
+
   return newUserData;
 };
 
@@ -59,6 +77,19 @@ export const loginService = async (data: loginParams) => {
 
   if (!user || !isValidPassword) {
     throw new AppError("Email / Password incorrect", 400);
+  }
+
+  if (!user.isVerified) {
+    throw new AppError(
+      "Your email has not been activated. Please check your email or you can request a new activation link.",
+      400,
+      [
+        {
+          field: "request_new_verification",
+          message: "Request new verification email.",
+        },
+      ]
+    );
   }
 
   return {

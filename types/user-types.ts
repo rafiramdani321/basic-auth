@@ -17,3 +17,10 @@ export type userDecodeToken = {
   iat: number;
   exp: number;
 };
+
+export type tokenParams = {
+  id?: string;
+  userId: string;
+  token: string;
+  verifyExp: Date;
+};

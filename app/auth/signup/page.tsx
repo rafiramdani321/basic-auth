@@ -11,8 +11,10 @@ import {
   validationResponses,
 } from "@/lib/validationSchema";
 import { buildErrorMap } from "@/lib/errorMap";
+import { useRouter } from "next/navigation";
 
 const Registration = () => {
+  const router = useRouter();
   const [formData, setFormData] = React.useState({
     username: "",
     email: "",
@@ -109,7 +111,8 @@ const Registration = () => {
         confirmPassword: "",
       });
       setErrors({});
-      showToastSuccess(data.message);
+      showToastSuccess(data.message, "top-center", 7000);
+      router.push("/auth/signin");
     } catch (error) {
       showToastError("Something went wrong");
     } finally {
