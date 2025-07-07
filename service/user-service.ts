@@ -1,17 +1,26 @@
-import { createUserParams, loginParams } from "@/types/user-types";
+import {
+  createUserParams,
+  loginParams,
+  updatePasswordParams,
+} from "@/types/user-types";
 import { AppError } from "@/lib/errors";
 import bcrypt from "bcrypt";
 import {
   createUser,
   findUserByEmail,
   findUserByUsername,
+  updatePasswordByUserId,
 } from "@/repositories/user-repository";
 import {
   loginValidation,
   registrationValidation,
+  updatePasswordValidation,
   validationResponses,
 } from "@/lib/validationSchema";
-import { createToken } from "@/repositories/token-repository";
+import {
+  createToken,
+  deleteTokenByUserId,
+} from "@/repositories/token-repository";
 import { sendMail } from "@/lib/email";
 import { emailVerificationToken } from "@/utils/jwt";
 
@@ -97,4 +106,28 @@ export const loginService = async (data: loginParams) => {
     email: user.email,
     username: user.username,
   };
+};
+
+export const updatePassword = async (data: updatePasswordParams) => {
+  const errorsValidation = updatePasswordValidation.safeParse(data);
+  if (!errorsValidation.success) {
+    const errors = validationResponses(errorsValidation);
+    throw new AppError("Validation failed!", 400, errors);
+  }
+
+  const dbErrors: { field: keyof updatePasswordParams; message: string }[] = [];
+
+  const existingUser = await findUserByEmail(data.email);
+  if (!existingUser) {
+    dbErrors.push({ field: "email", message: "user not found" });
+  }
+
+  if (dbErrors.length > 0) {
+    throw new AppError("Validation failed", 400, dbErrors);
+  }
+
+  const hashPassword = await bcrypt.hash(data.password, 10);
+  const update = await updatePasswordByUserId(existingUser!.id, hashPassword);
+  await deleteTokenByUserId(existingUser!.id);
+  return update;
 };

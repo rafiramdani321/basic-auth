@@ -30,3 +30,13 @@ export const updateIsVerifiedByUserId = async (userId: string) => {
     data: { isVerified: true },
   });
 };
+
+export const updatePasswordByUserId = async (
+  userId: string,
+  password: string
+) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { password: password },
+  });
+};

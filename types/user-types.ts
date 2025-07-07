@@ -24,3 +24,9 @@ export type tokenParams = {
   token: string;
   verifyExp: Date;
 };
+
+export type updatePasswordParams = {
+  email: string;
+  password: string;
+  confirmPassword: string;
+};

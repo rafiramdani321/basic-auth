@@ -12,6 +12,7 @@ import { loginValidation, validationResponses } from "@/lib/validationSchema";
 import { buildErrorMap } from "@/lib/errorMap";
 import { toast } from "sonner";
 import { useResendEmail } from "@/hooks/useResendEmail";
+import ForgotPassword from "../_components/forgot-password";
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
 
@@ -32,6 +33,7 @@ const Login = () => {
   const [errors, setErrors] = React.useState<
     Partial<Record<keyof typeof formData, string[]>>
   >({});
+  const [forgotPasswordModal, setForgotPasswordModal] = React.useState(false);
 
   const inputRef = React.useRef<{
     email: HTMLInputElement | null;
@@ -257,15 +259,24 @@ const Login = () => {
             </div>
           )}
 
-          <p className="text-xs">
-            you don't have an account yet?{" "}
-            <Link
-              href={"/auth/signup"}
-              className="text-emerald-600 hover:underline"
+          <div className="flex justify-between">
+            <p className="text-xs">
+              you don't have an account yet?{" "}
+              <Link
+                href={"/auth/signup"}
+                className="text-emerald-600 hover:underline"
+              >
+                signup
+              </Link>
+            </p>
+            <button
+              type="button"
+              onClick={() => setForgotPasswordModal(true)}
+              className="text-xs hover:underline hover:text-emerald-500"
             >
-              signup
-            </Link>
-          </p>
+              Forgot password?
+            </button>
+          </div>
           <div className="flex justify-center mt-10">
             <button
               disabled={loading}
@@ -283,6 +294,10 @@ const Login = () => {
             </button>
           </div>
         </form>
+        <ForgotPassword
+          open={forgotPasswordModal}
+          onOpenChange={setForgotPasswordModal}
+        />
       </div>
     </div>
   );

@@ -52,3 +52,20 @@ export const verifyEmailToken = (token: string) => {
     process.env.EMAIL_VERIFICATION_SECRET!
   ) as JwtPayload;
 };
+
+export const signForgetPasswordToken = (email: string, expiresIn = "1h") => {
+  return jwt.sign(
+    { email },
+    process.env.FORGET_PASSWORD_TOKEN_SECRET! as jwt.Secret,
+    {
+      expiresIn: expiresIn as jwt.SignOptions["expiresIn"],
+    }
+  );
+};
+
+export const verifyForgetPasswordToken = (token: string) => {
+  return jwt.verify(
+    token,
+    process.env.FORGET_PASSWORD_TOKEN_SECRET!
+  ) as JwtPayload;
+};
